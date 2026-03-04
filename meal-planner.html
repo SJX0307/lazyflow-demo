@@ -11,7 +11,667 @@
 
   /* HEADER */
   .header {
-    background: #1A2530;
+    background: #1A2530;<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LazyFlow · AI 備餐規劃</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: #F5F0E8; color: #1A2530; overflow: hidden; }
+
+  .header {
+    background: #1A2530; padding: 12px 24px;
+    display: flex; align-items: center; gap: 12px; height: 52px;
+  }
+  .logo-sm {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: linear-gradient(145deg, #2C3E50, #718096);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .logo-sm .lazy { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 9px; color: #fff; line-height: 1; }
+  .logo-sm .flow { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 9px; color: rgba(255,255,255,0.45); line-height: 1; }
+  .header-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: #fff; }
+  .header-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-left: auto; letter-spacing: 2px; }
+
+  .page { display: flex; flex-direction: column; height: calc(100vh - 52px); overflow: hidden; }
+
+  /* STEP BAR */
+  .step-bar {
+    background: #fff; border-bottom: 1px solid #E8E2D8;
+    padding: 0 24px; display: flex; align-items: stretch;
+    height: 48px; flex-shrink: 0; gap: 0;
+  }
+  .step {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 20px; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s; color: #aaa; font-size: 13px;
+    position: relative;
+  }
+  .step:hover { color: #1A2530; }
+  .step.active { color: #1A2530; border-bottom-color: #E85D3A; }
+  .step.done { color: #2C3E50; }
+  .step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #E8E2D8; color: #aaa;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .step.active .step-num { background: #E85D3A; color: #fff; }
+  .step.done .step-num { background: #2C3E50; color: #fff; }
+  .step-label { font-size: 12px; white-space: nowrap; }
+  .step-value { font-size: 11px; color: #E85D3A; font-weight: 700; }
+  .step-arrow { color: #ddd; font-size: 12px; align-self: center; }
+
+  /* PANEL AREA */
+  .panel-area {
+    background: #fff; border-bottom: 1px solid #E8E2D8;
+    padding: 16px 24px; flex-shrink: 0;
+    min-height: 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #aaa; margin-bottom: 12px; }
+
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 7px 14px; border-radius: 20px;
+    background: #F5F0E8; border: 1.5px solid #E8E2D8;
+    font-size: 13px; color: #555; cursor: pointer; transition: all 0.15s;
+  }
+  .chip:hover { border-color: #2C3E50; color: #1A2530; }
+  .chip.selected { background: #1A2530; border-color: #1A2530; color: #fff; }
+  .chip.multi-selected { background: #2C3E50; border-color: #2C3E50; color: #fff; }
+  .chip.warning-selected { background: #E85D3A; border-color: #E85D3A; color: #fff; }
+
+  .panel-hint { font-size: 11px; color: #bbb; margin-top: 10px; }
+
+  /* BOTTOM ACTION */
+  .action-bar {
+    background: #fff; border-bottom: 1px solid #E8E2D8;
+    padding: 10px 24px; display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .servings-wrap { display: flex; align-items: center; gap: 8px; }
+  .servings-wrap label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #aaa; }
+  .servings-input {
+    width: 60px; padding: 7px 10px;
+    border: 1.5px solid #E8E2D8; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: #1A2530; background: #F5F0E8; outline: none; text-align: center;
+  }
+  .servings-input:focus { border-color: #2C3E50; }
+  .generate-btn {
+    margin-left: auto;
+    padding: 9px 22px; background: #E85D3A; color: #fff;
+    border: none; border-radius: 10px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .generate-btn:hover { background: #c94d2e; transform: translateY(-1px); }
+  .generate-btn:disabled { background: #ddd; cursor: not-allowed; transform: none; }
+  .summary-text { font-size: 12px; color: #888; }
+  .summary-text strong { color: #1A2530; }
+
+  /* CONTENT */
+  .content { flex: 1; display: flex; overflow: hidden; }
+  .plan-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  .empty-state {
+    height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+  }
+  .empty-state .big { font-family: 'Syne', sans-serif; font-size: 16px; color: #bbb; }
+  .empty-state .small { font-size: 13px; color: #ccc; text-align: center; line-height: 1.8; }
+
+  .plan-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .plan-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; }
+  .plan-meta { font-size: 11px; color: #aaa; letter-spacing: 1px; }
+  .plan-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .plan-tag-warn { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #FDE8E2; color: #E85D3A; font-weight: 700; }
+
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .day-card {
+    background: #fff; border-radius: 12px;
+    border: 1px solid #E8E2D8; overflow: hidden;
+    animation: fadeUp 0.35s ease forwards; opacity: 0;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .day-header { background: #1A2530; padding: 7px 10px; text-align: center; }
+  .day-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; color: #fff; }
+  .meal-block { padding: 8px 10px; border-bottom: 1px solid #F0EBE3; }
+  .meal-block:last-child { border-bottom: none; }
+  .meal-type { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: #E85D3A; font-weight: 700; margin-bottom: 3px; }
+  .meal-name { font-size: 11px; font-weight: 600; color: #1A2530; line-height: 1.4; }
+  .meal-kcal { font-size: 9px; color: #aaa; margin-top: 2px; }
+  .meal-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+  .meal-tag { font-size: 8px; padding: 1px 5px; border-radius: 10px; background: #F0EBE3; color: #888; }
+
+  /* GROCERY */
+  .grocery-panel {
+    width: 240px; background: #fff;
+    border-left: 1px solid #E8E2D8;
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .grocery-header {
+    padding: 12px 16px; border-bottom: 1px solid #E8E2D8;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .grocery-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; }
+  .grocery-count { font-size: 10px; background: #E85D3A; color: #fff; padding: 2px 7px; border-radius: 10px; }
+  .grocery-list { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .grocery-category { margin-bottom: 14px; }
+  .grocery-cat-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #aaa; margin-bottom: 6px; font-weight: 700; }
+  .grocery-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #F5F0E8; font-size: 12px; }
+  .grocery-item:last-child { border-bottom: none; }
+  .grocery-item-qty { color: #E85D3A; font-weight: 700; font-size: 11px; }
+  .grocery-item.filtered { text-decoration: line-through; color: #ccc; }
+  .grocery-item.filtered .grocery-item-qty { color: #ccc; }
+
+  /* MOBILE */
+  @media (max-width: 640px) {
+    .header-sub { display: none; }
+    .step-bar { padding: 0 12px; overflow-x: auto; }
+    .panel-area { padding: 12px 16px; }
+    .action-bar { padding: 10px 16px; flex-wrap: wrap; }
+    .generate-btn { width: 100%; margin-left: 0; }
+    .content { flex-direction: column; }
+    .grocery-panel { width: 100%; height: 200px; border-left: none; border-top: 1px solid #E8E2D8; }
+    .week-grid { grid-template-columns: repeat(2, 1fr); }
+    .plan-area { padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-sm"><div class="lazy">Lazy</div><div class="flow">Flow</div></div>
+  <div class="header-title">AI 備餐規劃</div>
+  <div class="header-sub">MEAL PLANNER</div>
+</div>
+
+<div class="page">
+
+  <!-- STEP BAR -->
+  <div class="step-bar">
+    <div class="step active" id="step-1" onclick="goStep(1)">
+      <div class="step-num">1</div>
+      <div class="step-label">料理風格 <span class="step-value" id="val-style"></span></div>
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="step" id="step-2" onclick="goStep(2)">
+      <div class="step-num">2</div>
+      <div class="step-label">肉類偏好 <span class="step-value" id="val-meat"></span></div>
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="step" id="step-3" onclick="goStep(3)">
+      <div class="step-num">3</div>
+      <div class="step-label">忌口設定 <span class="step-value" id="val-avoid"></span></div>
+    </div>
+  </div>
+
+  <!-- PANEL AREA -->
+  <div class="panel-area">
+    <div class="panel active" id="panel-1">
+      <div class="panel-title">選擇料理風格</div>
+      <div class="chip-group">
+        <div class="chip" data-val="japanese" onclick="selectStyle(this)">🍱 日式家常</div>
+        <div class="chip" data-val="mediterranean" onclick="selectStyle(this)">🫒 地中海風</div>
+        <div class="chip" data-val="lowcarb" onclick="selectStyle(this)">💪 低醣健身</div>
+        <div class="chip" data-val="taiwanese" onclick="selectStyle(this)">🥢 台式家常</div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-2">
+      <div class="panel-title">選擇肉類偏好（可複選）</div>
+      <div class="chip-group">
+        <div class="chip" data-val="chicken" onclick="toggleMeat(this)">🐔 雞肉</div>
+        <div class="chip" data-val="pork" onclick="toggleMeat(this)">🐷 豬肉</div>
+        <div class="chip" data-val="beef" onclick="toggleMeat(this)">🐄 牛肉</div>
+        <div class="chip" data-val="seafood" onclick="toggleMeat(this)">🐟 海鮮</div>
+        <div class="chip" data-val="veg" onclick="toggleMeat(this)">🥦 素食</div>
+      </div>
+      <div class="panel-hint">可選多項，以第一選項為主要蛋白質來源</div>
+    </div>
+
+    <div class="panel" id="panel-3">
+      <div class="panel-title">設定忌口（可複選，可略過）</div>
+      <div class="chip-group">
+        <div class="chip" data-val="spicy" data-keywords="辣,麻辣,川味" onclick="toggleAvoid(this)">🌶 不吃辣</div>
+        <div class="chip" data-val="allium" data-keywords="蔥,蒜,洋蔥" onclick="toggleAvoid(this)">🧄 不吃蔥蒜</div>
+        <div class="chip" data-val="seafood" data-keywords="海鮮,魚,蝦,蛤蜊,章魚,花枝" onclick="toggleAvoid(this)">🦐 不吃海鮮</div>
+        <div class="chip" data-val="gluten" data-keywords="麵,麵條,烏龍,拉麵,蕎麥,皮塔,古斯米" onclick="toggleAvoid(this)">🌾 無麩質</div>
+        <div class="chip" data-val="sugar" data-keywords="砂糖,甜,味醂,照燒" onclick="toggleAvoid(this)">🍬 無砂糖</div>
+        <div class="chip" data-val="sesameoil" data-keywords="麻油" onclick="toggleAvoid(this)">🫙 無麻油</div>
+      </div>
+      <div class="panel-hint">系統會自動過濾含忌口食材的菜色，並替換為安全選項</div>
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <div class="summary-text" id="summaryText">請完成上方設定</div>
+    <div class="servings-wrap">
+      <label>人數</label>
+      <input class="servings-input" id="servings" type="number" min="1" max="10" value="2" />
+    </div>
+    <button class="generate-btn" id="generateBtn" onclick="generatePlan()" disabled>生成食譜 ✦</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="plan-area" id="planArea">
+      <div class="empty-state" id="emptyState">
+        <div style="font-size:40px;">🥗</div>
+        <div class="big">完成上方三步驟</div>
+        <div class="small">選擇風格 → 肉類 → 忌口<br>自動生成一週午晚餐及備料清單</div>
+      </div>
+      <div id="planContent" style="display:none">
+        <div class="plan-header">
+          <div class="plan-title" id="planTitle"></div>
+          <div class="plan-meta" id="planMeta"></div>
+          <div class="plan-tags" id="planTags"></div>
+        </div>
+        <div class="week-grid" id="weekGrid"></div>
+      </div>
+    </div>
+
+    <div class="grocery-panel" id="groceryPanel" style="display:none">
+      <div class="grocery-header">
+        <div class="grocery-title">🛒 備料清單</div>
+        <div class="grocery-count" id="groceryCount">0 項</div>
+      </div>
+      <div class="grocery-list" id="groceryList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// STATE
+let selectedStyle = null;
+let selectedMeats = [];
+let selectedAvoids = [];
+
+const AVOID_KEYWORDS = {
+  spicy: ['辣','麻辣','川味','宮保'],
+  allium: ['蔥','蒜','洋蔥','九層塔'],
+  seafood: ['海鮮','魚','蝦','蛤蜊','章魚','花枝','鮪','鮭','鰻','虱目','鯛'],
+  gluten: ['麵','烏龍','拉麵','蕎麥','皮塔','古斯米','餡餅','水餃'],
+  sugar: ['照燒','壽喜','砂糖','甜'],
+  sesameoil: ['麻油']
+};
+
+const STYLE_LABELS = { japanese:'🍱 日式家常', taiwanese:'🥢 台式家常', mediterranean:'🫒 地中海風', lowcarb:'💪 低醣健身' };
+const MEAT_LABELS = { chicken:'雞肉', pork:'豬肉', beef:'牛肉', seafood:'海鮮', veg:'素食' };
+const AVOID_LABELS = { spicy:'不辣', allium:'不蔥蒜', seafood:'不海鮮', gluten:'無麩質', sugar:'無砂糖', sesameoil:'無麻油' };
+
+// STEP NAV
+function goStep(n) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  document.querySelectorAll('.step').forEach((s,i) => {
+    s.classList.remove('active');
+    if (i+1 < n) s.classList.add('done');
+    else s.classList.remove('done');
+  });
+  document.getElementById('step-'+n).classList.add('active');
+}
+
+function selectStyle(el) {
+  document.querySelectorAll('#panel-1 .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedStyle = el.dataset.val;
+  document.getElementById('val-style').textContent = el.textContent;
+  document.getElementById('step-1').classList.add('done');
+  updateSummary();
+  goStep(2);
+}
+
+function toggleMeat(el) {
+  const val = el.dataset.val;
+  if (el.classList.contains('multi-selected')) {
+    el.classList.remove('multi-selected');
+    selectedMeats = selectedMeats.filter(m => m !== val);
+  } else {
+    el.classList.add('multi-selected');
+    selectedMeats.push(val);
+  }
+  document.getElementById('val-meat').textContent = selectedMeats.length ? selectedMeats.map(m=>MEAT_LABELS[m]).join('、') : '';
+  document.getElementById('step-2').classList.toggle('done', selectedMeats.length > 0);
+  updateSummary();
+  if (selectedMeats.length === 1) setTimeout(() => goStep(3), 300);
+}
+
+function toggleAvoid(el) {
+  const val = el.dataset.val;
+  if (el.classList.contains('warning-selected')) {
+    el.classList.remove('warning-selected');
+    selectedAvoids = selectedAvoids.filter(a => a !== val);
+  } else {
+    el.classList.add('warning-selected');
+    selectedAvoids.push(val);
+  }
+  document.getElementById('val-avoid').textContent = selectedAvoids.length ? selectedAvoids.length+'項' : '';
+  document.getElementById('step-3').classList.toggle('done', true);
+  updateSummary();
+}
+
+function updateSummary() {
+  const ready = selectedStyle && selectedMeats.length > 0;
+  document.getElementById('generateBtn').disabled = !ready;
+  if (ready) {
+    const avoidText = selectedAvoids.length ? `・忌口 ${selectedAvoids.map(a=>AVOID_LABELS[a]).join('、')}` : '';
+    document.getElementById('summaryText').innerHTML =
+      `<strong>${STYLE_LABELS[selectedStyle]}</strong> ・ ${selectedMeats.map(m=>MEAT_LABELS[m]).join('+')}${avoidText}`;
+  } else {
+    document.getElementById('summaryText').textContent = '請選擇料理風格及肉類';
+  }
+}
+
+// DATA
+const DATA = {
+  japanese: {
+    chicken: [
+      { day:'週一', lunch:{name:'照燒雞腿飯',kcal:620,tags:['下飯','家常']}, dinner:{name:'雞肉親子丼',kcal:540,tags:['雞蛋','鮮味']} },
+      { day:'週二', lunch:{name:'雞肉唐揚定食',kcal:650,tags:['酥脆','下飯']}, dinner:{name:'水炊雞肉鍋',kcal:420,tags:['清淡','暖胃']} },
+      { day:'週三', lunch:{name:'雞肉味噌湯定食',kcal:480,tags:['湯品','低脂']}, dinner:{name:'雞肉天婦羅',kcal:580,tags:['酥炸','定食']} },
+      { day:'週四', lunch:{name:'雞腿壽司飯',kcal:520,tags:['壽司','輕食']}, dinner:{name:'烤雞翅串燒',kcal:490,tags:['燒烤','居酒屋']} },
+      { day:'週五', lunch:{name:'雞肉咖哩飯',kcal:660,tags:['咖哩','暖胃']}, dinner:{name:'雞肉茶碗蒸',kcal:280,tags:['清蒸','低卡']} },
+      { day:'週六', lunch:{name:'雞肉冷麵',kcal:430,tags:['清爽','夏日']}, dinner:{name:'雞肉壽喜燒',kcal:590,tags:['火鍋','甜鹹']} },
+      { day:'週日', lunch:{name:'雞肉炒飯',kcal:560,tags:['快速','家常']}, dinner:{name:'雞肉豆腐鍋',kcal:380,tags:['清淡','健康']} }
+    ],
+    pork: [
+      { day:'週一', lunch:{name:'豬肉薑燒定食',kcal:600,tags:['下飯','家常']}, dinner:{name:'豬肉壽喜燒',kcal:680,tags:['甜鹹','火鍋']} },
+      { day:'週二', lunch:{name:'豬排飯',kcal:720,tags:['炸物','定食']}, dinner:{name:'豬肉味噌湯定食',kcal:480,tags:['湯品','清淡']} },
+      { day:'週三', lunch:{name:'叉燒拉麵',kcal:700,tags:['湯麵','暖胃']}, dinner:{name:'豬肉蒸餃',kcal:420,tags:['餃子','輕食']} },
+      { day:'週四', lunch:{name:'豬肉炒烏龍麵',kcal:580,tags:['炒麵','快速']}, dinner:{name:'豬肉豆腐鍋',kcal:440,tags:['清淡','健康']} },
+      { day:'週五', lunch:{name:'豬肉親子丼',kcal:550,tags:['丼飯','家常']}, dinner:{name:'豬肉串燒',kcal:480,tags:['燒烤','居酒屋']} },
+      { day:'週六', lunch:{name:'角煮定食',kcal:680,tags:['滷肉','下飯']}, dinner:{name:'豬肉火鍋',kcal:520,tags:['火鍋','暖胃']} },
+      { day:'週日', lunch:{name:'豬肉咖哩烏龍',kcal:640,tags:['咖哩','麵食']}, dinner:{name:'冷豆腐定食',kcal:320,tags:['清淡','低卡']} }
+    ],
+    beef: [
+      { day:'週一', lunch:{name:'牛丼',kcal:620,tags:['牛肉','快速']}, dinner:{name:'牛肉壽喜燒',kcal:720,tags:['火鍋','甜鹹']} },
+      { day:'週二', lunch:{name:'牛肉咖哩飯',kcal:680,tags:['咖哩','暖胃']}, dinner:{name:'牛肉串燒',kcal:520,tags:['燒烤','居酒屋']} },
+      { day:'週三', lunch:{name:'牛肉炒飯',kcal:600,tags:['炒飯','快速']}, dinner:{name:'牛肉火鍋',kcal:580,tags:['火鍋','暖胃']} },
+      { day:'週四', lunch:{name:'牛肉定食',kcal:640,tags:['定食','家常']}, dinner:{name:'和牛握壽司',kcal:480,tags:['壽司','高級']} },
+      { day:'週五', lunch:{name:'牛肉烏龍麵',kcal:560,tags:['麵食','湯麵']}, dinner:{name:'牛肉豆腐鍋',kcal:500,tags:['清淡','健康']} },
+      { day:'週六', lunch:{name:'牛肉三明治',kcal:520,tags:['輕食','簡單']}, dinner:{name:'牛排定食',kcal:750,tags:['牛排','豪華']} },
+      { day:'週日', lunch:{name:'牛肉炒烏龍',kcal:590,tags:['炒麵','快速']}, dinner:{name:'牛肉壽喜鍋',kcal:680,tags:['火鍋','甜鹹']} }
+    ],
+    seafood: [
+      { day:'週一', lunch:{name:'鮭魚定食',kcal:480,tags:['魚類','健康']}, dinner:{name:'海鮮茶碗蒸',kcal:320,tags:['清蒸','低卡']} },
+      { day:'週二', lunch:{name:'鰻魚飯',kcal:580,tags:['鰻魚','鮮味']}, dinner:{name:'海鮮鍋',kcal:420,tags:['火鍋','清淡']} },
+      { day:'週三', lunch:{name:'花枝天婦羅定食',kcal:560,tags:['酥炸','海鮮']}, dinner:{name:'蝦仁炒飯',kcal:500,tags:['炒飯','快速']} },
+      { day:'週四', lunch:{name:'海鮮蕎麥麵',kcal:440,tags:['麵食','清爽']}, dinner:{name:'烤鯖魚定食',kcal:460,tags:['烤魚','家常']} },
+      { day:'週五', lunch:{name:'海鮮丼',kcal:550,tags:['丼飯','生食']}, dinner:{name:'蝦天婦羅定食',kcal:600,tags:['酥炸','定食']} },
+      { day:'週六', lunch:{name:'鮭魚卵壽司',kcal:480,tags:['壽司','鮮味']}, dinner:{name:'蛤蜊味噌湯定食',kcal:350,tags:['湯品','清淡']} },
+      { day:'週日', lunch:{name:'蒸魚定食',kcal:400,tags:['清蒸','健康']}, dinner:{name:'海鮮炒飯',kcal:520,tags:['炒飯','鮮味']} }
+    ],
+    veg: [
+      { day:'週一', lunch:{name:'野菜天婦羅定食',kcal:420,tags:['蔬食','酥炸']}, dinner:{name:'豆腐味噌湯定食',kcal:320,tags:['清淡','健康']} },
+      { day:'週二', lunch:{name:'蘑菇炊飯',kcal:380,tags:['菇類','香氣']}, dinner:{name:'野菜鍋',kcal:280,tags:['火鍋','低卡']} },
+      { day:'週三', lunch:{name:'玉子燒定食',kcal:400,tags:['雞蛋','家常']}, dinner:{name:'冷豆腐',kcal:200,tags:['清淡','低卡']} },
+      { day:'週四', lunch:{name:'野菜咖哩飯',kcal:520,tags:['咖哩','蔬食']}, dinner:{name:'漬物定食',kcal:260,tags:['發酵','清爽']} },
+      { day:'週五', lunch:{name:'蔬菜炒烏龍',kcal:440,tags:['炒麵','蔬食']}, dinner:{name:'豆腐田樂',kcal:300,tags:['烤豆腐','甜味噌']} },
+      { day:'週六', lunch:{name:'蔬菜壽司卷',kcal:360,tags:['壽司','輕食']}, dinner:{name:'野菜蕎麥麵',kcal:480,tags:['麵食','蔬食']} },
+      { day:'週日', lunch:{name:'納豆飯',kcal:340,tags:['發酵','健康']}, dinner:{name:'野菜鍋燒烏龍',kcal:420,tags:['湯麵','暖胃']} }
+    ]
+  },
+  taiwanese: {
+    chicken: [
+      { day:'週一', lunch:{name:'雞腿便當',kcal:680,tags:['下飯','家常']}, dinner:{name:'三杯雞',kcal:580,tags:['九層塔','下飯']} },
+      { day:'週二', lunch:{name:'雞肉燥飯',kcal:600,tags:['滷汁','家常']}, dinner:{name:'薑母雞湯',kcal:420,tags:['暖胃','湯品']} },
+      { day:'週三', lunch:{name:'鹽水雞便當',kcal:520,tags:['清淡','健康']}, dinner:{name:'宮保雞丁',kcal:560,tags:['辣味','下飯']} },
+      { day:'週四', lunch:{name:'雞肉水餃',kcal:480,tags:['餃子','輕食']}, dinner:{name:'炸雞排',kcal:720,tags:['酥脆','台式']} },
+      { day:'週五', lunch:{name:'雞肉米粉湯',kcal:380,tags:['湯麵','清淡']}, dinner:{name:'蔥油雞',kcal:500,tags:['清蒸','家常']} },
+      { day:'週六', lunch:{name:'雞肉粥',kcal:340,tags:['粥品','清淡']}, dinner:{name:'麻油雞飯',kcal:620,tags:['麻油','暖胃']} },
+      { day:'週日', lunch:{name:'雞肉飯糰',kcal:420,tags:['輕食','快速']}, dinner:{name:'薑蔥雞',kcal:480,tags:['清蒸','健康']} }
+    ],
+    pork: [
+      { day:'週一', lunch:{name:'控肉飯',kcal:720,tags:['滷肉','下飯']}, dinner:{name:'炒豬肉高麗菜',kcal:480,tags:['快炒','家常']} },
+      { day:'週二', lunch:{name:'豬排便當',kcal:680,tags:['炸排','家常']}, dinner:{name:'紅燒豬肉',kcal:620,tags:['滷味','下飯']} },
+      { day:'週三', lunch:{name:'豬肉水餃',kcal:460,tags:['餃子','輕食']}, dinner:{name:'獅子頭',kcal:580,tags:['肉丸','家常']} },
+      { day:'週四', lunch:{name:'豬肉米粉',kcal:400,tags:['米粉','清淡']}, dinner:{name:'蒜泥白肉',kcal:520,tags:['蒜味','下飯']} },
+      { day:'週五', lunch:{name:'排骨飯',kcal:660,tags:['排骨','家常']}, dinner:{name:'豬肉炒飯',kcal:580,tags:['炒飯','快速']} },
+      { day:'週六', lunch:{name:'豬肉粽',kcal:580,tags:['粽子','傳統']}, dinner:{name:'豬腳麵線',kcal:540,tags:['麵線','傳統']} },
+      { day:'週日', lunch:{name:'豬肉蛋炒飯',kcal:600,tags:['炒飯','家常']}, dinner:{name:'豬骨湯',kcal:320,tags:['湯品','清淡']} }
+    ],
+    beef: [
+      { day:'週一', lunch:{name:'牛肉麵',kcal:680,tags:['麵食','經典']}, dinner:{name:'沙茶牛肉炒空心菜',kcal:520,tags:['快炒','下飯']} },
+      { day:'週二', lunch:{name:'牛肉水餃',kcal:480,tags:['餃子','輕食']}, dinner:{name:'紅燒牛腩',kcal:640,tags:['滷味','下飯']} },
+      { day:'週三', lunch:{name:'牛肉炒飯',kcal:620,tags:['炒飯','快速']}, dinner:{name:'牛肉湯',kcal:380,tags:['湯品','清淡']} },
+      { day:'週四', lunch:{name:'牛肉便當',kcal:700,tags:['便當','家常']}, dinner:{name:'牛肉炒青椒',kcal:480,tags:['快炒','家常']} },
+      { day:'週五', lunch:{name:'牛肉燴飯',kcal:640,tags:['燴飯','暖胃']}, dinner:{name:'牛肉羹湯',kcal:360,tags:['湯品','傳統']} },
+      { day:'週六', lunch:{name:'牛肉餡餅',kcal:560,tags:['餡餅','傳統']}, dinner:{name:'台式牛排',kcal:680,tags:['牛排','台式']} },
+      { day:'週日', lunch:{name:'牛肉蛋炒飯',kcal:620,tags:['炒飯','家常']}, dinner:{name:'牛肉火鍋',kcal:580,tags:['火鍋','暖胃']} }
+    ],
+    seafood: [
+      { day:'週一', lunch:{name:'虱目魚便當',kcal:520,tags:['魚類','台式']}, dinner:{name:'蛤蜊絲瓜',kcal:280,tags:['清淡','鮮甜']} },
+      { day:'週二', lunch:{name:'海鮮炒米粉',kcal:480,tags:['米粉','海鮮']}, dinner:{name:'清蒸魚',kcal:320,tags:['清蒸','健康']} },
+      { day:'週三', lunch:{name:'蝦仁炒飯',kcal:560,tags:['炒飯','快速']}, dinner:{name:'三杯中卷',kcal:420,tags:['快炒','下飯']} },
+      { day:'週四', lunch:{name:'海鮮粥',kcal:360,tags:['粥品','清淡']}, dinner:{name:'蒸魚',kcal:300,tags:['清蒸','低卡']} },
+      { day:'週五', lunch:{name:'花枝羹麵',kcal:440,tags:['羹麵','傳統']}, dinner:{name:'薑蔥龍蝦',kcal:480,tags:['龍蝦','豪華']} },
+      { day:'週六', lunch:{name:'海鮮炒麵',kcal:520,tags:['炒麵','海鮮']}, dinner:{name:'炒海瓜子',kcal:300,tags:['快炒','下酒']} },
+      { day:'週日', lunch:{name:'魚丸米粉',kcal:380,tags:['米粉','湯品']}, dinner:{name:'蒜蒸蝦',kcal:320,tags:['清蒸','鮮味']} }
+    ],
+    veg: [
+      { day:'週一', lunch:{name:'素食便當',kcal:480,tags:['蔬食','均衡']}, dinner:{name:'炒地瓜葉',kcal:200,tags:['清炒','健康']} },
+      { day:'週二', lunch:{name:'蔬菜炒飯',kcal:480,tags:['炒飯','快速']}, dinner:{name:'麻婆豆腐',kcal:380,tags:['豆腐','辣味']} },
+      { day:'週三', lunch:{name:'素肉燥飯',kcal:520,tags:['素食','下飯']}, dinner:{name:'炒時蔬',kcal:240,tags:['清炒','低卡']} },
+      { day:'週四', lunch:{name:'蔬菜水餃',kcal:400,tags:['餃子','輕食']}, dinner:{name:'紅燒豆腐',kcal:320,tags:['豆腐','家常']} },
+      { day:'週五', lunch:{name:'什錦炒麵',kcal:520,tags:['炒麵','快速']}, dinner:{name:'味噌豆腐湯',kcal:200,tags:['湯品','清淡']} },
+      { day:'週六', lunch:{name:'素食滷味飯',kcal:480,tags:['滷味','蔬食']}, dinner:{name:'炒三色蔬菜',kcal:220,tags:['清炒','健康']} },
+      { day:'週日', lunch:{name:'蔬菜粥',kcal:300,tags:['粥品','清淡']}, dinner:{name:'客家小炒（素）',kcal:420,tags:['客家','傳統']} }
+    ]
+  },
+  mediterranean: {
+    chicken: [
+      { day:'週一', lunch:{name:'希臘烤雞腿沙拉',kcal:520,tags:['沙拉','健康']}, dinner:{name:'檸檬烤雞腿',kcal:580,tags:['烤物','清爽']} },
+      { day:'週二', lunch:{name:'雞肉皮塔口袋餅',kcal:480,tags:['輕食','中東']}, dinner:{name:'雞肉番茄燉鍋',kcal:540,tags:['燉煮','暖胃']} },
+      { day:'週三', lunch:{name:'地中海雞肉沙拉',kcal:420,tags:['沙拉','低卡']}, dinner:{name:'烤雞佐烤蔬菜',kcal:560,tags:['烤物','均衡']} },
+      { day:'週四', lunch:{name:'雞肉古斯米',kcal:500,tags:['穀物','均衡']}, dinner:{name:'雞肉橄欖燉飯',kcal:600,tags:['燉飯','鮮味']} },
+      { day:'週五', lunch:{name:'雞肉凱薩沙拉',kcal:460,tags:['沙拉','輕食']}, dinner:{name:'香料烤雞',kcal:580,tags:['香料','烤物']} },
+      { day:'週六', lunch:{name:'雞肉法拉費',kcal:520,tags:['鷹嘴豆','中東']}, dinner:{name:'雞肉帕尼尼',kcal:540,tags:['三明治','輕食']} },
+      { day:'週日', lunch:{name:'雞肉地中海炒飯',kcal:560,tags:['炒飯','融合']}, dinner:{name:'檸檬雞湯',kcal:380,tags:['湯品','清淡']} }
+    ],
+    beef: [
+      { day:'週一', lunch:{name:'牛肉捲餅',kcal:560,tags:['輕食','快速']}, dinner:{name:'烤牛排佐沙拉',kcal:680,tags:['牛排','均衡']} },
+      { day:'週二', lunch:{name:'牛肉皮塔口袋餅',kcal:520,tags:['中東','輕食']}, dinner:{name:'牛肉番茄燉鍋',kcal:600,tags:['燉煮','暖胃']} },
+      { day:'週三', lunch:{name:'希臘牛肉沙拉',kcal:480,tags:['沙拉','均衡']}, dinner:{name:'牛肉串燒',kcal:560,tags:['烤物','香料']} },
+      { day:'週四', lunch:{name:'牛肉古斯米',kcal:580,tags:['穀物','均衡']}, dinner:{name:'牛肉燉蔬菜',kcal:520,tags:['燉煮','健康']} },
+      { day:'週五', lunch:{name:'牛肉沙拉碗',kcal:460,tags:['沙拉','低卡']}, dinner:{name:'烤牛肉佐橄欖',kcal:580,tags:['烤物','地中海']} },
+      { day:'週六', lunch:{name:'牛肉帕尼尼',kcal:540,tags:['三明治','輕食']}, dinner:{name:'牛肉燉飯',kcal:640,tags:['燉飯','鮮味']} },
+      { day:'週日', lunch:{name:'牛肉沙威瑪',kcal:520,tags:['中東','快速']}, dinner:{name:'牛肉湯',kcal:380,tags:['湯品','清淡']} }
+    ],
+    pork: [
+      { day:'週一', lunch:{name:'豬肉捲餅',kcal:520,tags:['輕食','快速']}, dinner:{name:'烤豬排佐蔬菜',kcal:620,tags:['烤物','均衡']} },
+      { day:'週二', lunch:{name:'豬肉皮塔',kcal:480,tags:['中東','輕食']}, dinner:{name:'香料豬肉燉鍋',kcal:560,tags:['燉煮','香料']} },
+      { day:'週三', lunch:{name:'豬肉沙拉碗',kcal:440,tags:['沙拉','清爽']}, dinner:{name:'烤豬肉串',kcal:520,tags:['烤物','香料']} },
+      { day:'週四', lunch:{name:'豬肉古斯米',kcal:540,tags:['穀物','均衡']}, dinner:{name:'豬肉燉蔬菜',kcal:500,tags:['燉煮','健康']} },
+      { day:'週五', lunch:{name:'豬肉帕尼尼',kcal:500,tags:['三明治','輕食']}, dinner:{name:'烤豬肋排',kcal:680,tags:['烤物','豪華']} },
+      { day:'週六', lunch:{name:'豬肉地中海炒',kcal:480,tags:['快炒','融合']}, dinner:{name:'豬肉燉飯',kcal:600,tags:['燉飯','暖胃']} },
+      { day:'週日', lunch:{name:'豬肉沙威瑪',kcal:500,tags:['中東','快速']}, dinner:{name:'豬肉湯',kcal:360,tags:['湯品','清淡']} }
+    ],
+    seafood: [
+      { day:'週一', lunch:{name:'烤鮭魚沙拉',kcal:480,tags:['魚類','健康']}, dinner:{name:'海鮮燉飯',kcal:620,tags:['燉飯','鮮味']} },
+      { day:'週二', lunch:{name:'鮪魚尼斯沙拉',kcal:420,tags:['沙拉','清爽']}, dinner:{name:'烤章魚',kcal:380,tags:['烤物','地中海']} },
+      { day:'週三', lunch:{name:'蝦仁皮塔',kcal:460,tags:['輕食','海鮮']}, dinner:{name:'蛤蜊白酒義大利麵',kcal:560,tags:['麵食','鮮味']} },
+      { day:'週四', lunch:{name:'海鮮沙拉',kcal:380,tags:['沙拉','低卡']}, dinner:{name:'烤魚佐香料蔬菜',kcal:480,tags:['烤物','健康']} },
+      { day:'週五', lunch:{name:'鮮蝦地中海沙拉',kcal:400,tags:['沙拉','清爽']}, dinner:{name:'海鮮湯',kcal:320,tags:['湯品','清淡']} },
+      { day:'週六', lunch:{name:'章魚沙拉',kcal:360,tags:['沙拉','地中海']}, dinner:{name:'烤蝦串',kcal:420,tags:['烤物','輕食']} },
+      { day:'週日', lunch:{name:'海鮮古斯米',kcal:500,tags:['穀物','海鮮']}, dinner:{name:'烤鯛魚',kcal:440,tags:['烤魚','清淡']} }
+    ],
+    veg: [
+      { day:'週一', lunch:{name:'法拉費沙拉碗',kcal:420,tags:['鷹嘴豆','蔬食']}, dinner:{name:'烤蔬菜拼盤',kcal:320,tags:['烤物','低卡']} },
+      { day:'週二', lunch:{name:'希臘沙拉',kcal:340,tags:['沙拉','清爽']}, dinner:{name:'蔬菜燉鍋',kcal:380,tags:['燉煮','暖胃']} },
+      { day:'週三', lunch:{name:'酪梨吐司',kcal:400,tags:['輕食','營養']}, dinner:{name:'番茄燉豆',kcal:360,tags:['燉煮','蔬食']} },
+      { day:'週四', lunch:{name:'蔬菜皮塔',kcal:380,tags:['輕食','中東']}, dinner:{name:'烤茄子',kcal:280,tags:['烤物','低卡']} },
+      { day:'週五', lunch:{name:'地中海蔬菜沙拉',kcal:320,tags:['沙拉','健康']}, dinner:{name:'蔬菜古斯米',kcal:420,tags:['穀物','均衡']} },
+      { day:'週六', lunch:{name:'卡布里沙拉',kcal:360,tags:['番茄','起司']}, dinner:{name:'烤彩椒鑲飯',kcal:440,tags:['烤物','創意']} },
+      { day:'週日', lunch:{name:'蔬菜燉飯',kcal:480,tags:['燉飯','蔬食']}, dinner:{name:'蔬菜湯',kcal:240,tags:['湯品','清淡']} }
+    ]
+  },
+  lowcarb: {
+    chicken: [
+      { day:'週一', lunch:{name:'烤雞胸生菜碗',kcal:380,tags:['高蛋白','低卡']}, dinner:{name:'香料烤雞腿',kcal:420,tags:['烤物','低醣']} },
+      { day:'週二', lunch:{name:'雞肉花椰菜炒飯',kcal:340,tags:['低醣','高蛋白']}, dinner:{name:'雞肉蔬菜湯',kcal:280,tags:['湯品','清淡']} },
+      { day:'週三', lunch:{name:'雞胸沙拉',kcal:320,tags:['沙拉','低卡']}, dinner:{name:'檸檬烤雞佐蘆筍',kcal:400,tags:['烤物','低醣']} },
+      { day:'週四', lunch:{name:'雞肉生菜捲',kcal:300,tags:['輕食','低醣']}, dinner:{name:'雞肉炒時蔬',kcal:360,tags:['快炒','低醣']} },
+      { day:'週五', lunch:{name:'雞肉酪梨碗',kcal:420,tags:['好脂肪','高蛋白']}, dinner:{name:'香烤雞翅',kcal:380,tags:['烤物','健康']} },
+      { day:'週六', lunch:{name:'雞肉蔬菜蛋捲',kcal:340,tags:['蛋白質','低醣']}, dinner:{name:'水煮雞胸佐醬汁',kcal:300,tags:['清淡','低卡']} },
+      { day:'週日', lunch:{name:'雞肉花椰菜湯',kcal:280,tags:['湯品','低醣']}, dinner:{name:'烤雞佐沙拉',kcal:420,tags:['烤物','均衡']} }
+    ],
+    beef: [
+      { day:'週一', lunch:{name:'牛肉生菜碗',kcal:440,tags:['高蛋白','低醣']}, dinner:{name:'烤牛排佐蔬菜',kcal:520,tags:['牛排','低醣']} },
+      { day:'週二', lunch:{name:'牛肉沙拉',kcal:380,tags:['沙拉','低卡']}, dinner:{name:'牛肉炒蔬菜',kcal:420,tags:['快炒','低醣']} },
+      { day:'週三', lunch:{name:'牛肉花椰菜炒',kcal:400,tags:['低醣','高蛋白']}, dinner:{name:'牛肉蔬菜湯',kcal:320,tags:['湯品','清淡']} },
+      { day:'週四', lunch:{name:'牛肉生菜捲',kcal:360,tags:['輕食','低醣']}, dinner:{name:'烤牛肉串',kcal:460,tags:['烤物','低醣']} },
+      { day:'週五', lunch:{name:'牛肉酪梨沙拉',kcal:460,tags:['好脂肪','均衡']}, dinner:{name:'牛肉蛋捲',kcal:400,tags:['蛋白質','低醣']} },
+      { day:'週六', lunch:{name:'牛肉蔬菜碗',kcal:420,tags:['均衡','低醣']}, dinner:{name:'烤牛肋排',kcal:580,tags:['烤物','豪華']} },
+      { day:'週日', lunch:{name:'牛肉湯',kcal:300,tags:['湯品','清淡']}, dinner:{name:'牛排佐沙拉',kcal:500,tags:['牛排','低醣']} }
+    ],
+    pork: [
+      { day:'週一', lunch:{name:'豬肉生菜碗',kcal:420,tags:['高蛋白','低醣']}, dinner:{name:'烤豬排佐蔬菜',kcal:500,tags:['烤物','低醣']} },
+      { day:'週二', lunch:{name:'豬肉沙拉',kcal:380,tags:['沙拉','低卡']}, dinner:{name:'豬肉炒花椰',kcal:400,tags:['低醣','快炒']} },
+      { day:'週三', lunch:{name:'豬肉花椰炒',kcal:380,tags:['低醣','高蛋白']}, dinner:{name:'豬肉蔬菜湯',kcal:300,tags:['湯品','清淡']} },
+      { day:'週四', lunch:{name:'豬肉生菜捲',kcal:340,tags:['輕食','低醣']}, dinner:{name:'烤豬肉串',kcal:440,tags:['烤物','低醣']} },
+      { day:'週五', lunch:{name:'豬肉蔬菜碗',kcal:400,tags:['均衡','低醣']}, dinner:{name:'豬肉蛋捲',kcal:380,tags:['蛋白質','低醣']} },
+      { day:'週六', lunch:{name:'豬肉沙拉碗',kcal:400,tags:['均衡','低醣']}, dinner:{name:'烤豬肋排',kcal:560,tags:['烤物','豪華']} },
+      { day:'週日', lunch:{name:'豬肉湯',kcal:280,tags:['湯品','清淡']}, dinner:{name:'豬排佐沙拉',kcal:480,tags:['烤物','低醣']} }
+    ],
+    seafood: [
+      { day:'週一', lunch:{name:'鮭魚沙拉碗',kcal:380,tags:['Omega3','低醣']}, dinner:{name:'烤鮭魚佐蘆筍',kcal:420,tags:['烤魚','健康']} },
+      { day:'週二', lunch:{name:'鮪魚酪梨沙拉',kcal:360,tags:['好脂肪','低卡']}, dinner:{name:'清蒸魚佐蔬菜',kcal:300,tags:['清蒸','低卡']} },
+      { day:'週三', lunch:{name:'蝦仁花椰炒',kcal:320,tags:['低醣','高蛋白']}, dinner:{name:'烤蝦串',kcal:280,tags:['烤物','低卡']} },
+      { day:'週四', lunch:{name:'海鮮沙拉',kcal:340,tags:['沙拉','清爽']}, dinner:{name:'魚片蔬菜湯',kcal:260,tags:['湯品','清淡']} },
+      { day:'週五', lunch:{name:'鮭魚生菜捲',kcal:360,tags:['輕食','低醣']}, dinner:{name:'烤魚佐沙拉',kcal:380,tags:['烤物','均衡']} },
+      { day:'週六', lunch:{name:'章魚沙拉',kcal:300,tags:['低卡','高蛋白']}, dinner:{name:'海鮮蒸蛋',kcal:280,tags:['清蒸','低醣']} },
+      { day:'週日', lunch:{name:'鮮蝦沙拉',kcal:320,tags:['沙拉','清爽']}, dinner:{name:'烤鯛魚佐蔬菜',kcal:400,tags:['烤魚','健康']} }
+    ],
+    veg: [
+      { day:'週一', lunch:{name:'豆腐蔬菜碗',kcal:300,tags:['蔬食','低醣']}, dinner:{name:'烤蔬菜拼盤',kcal:260,tags:['烤物','低卡']} },
+      { day:'週二', lunch:{name:'酪梨沙拉',kcal:340,tags:['好脂肪','低醣']}, dinner:{name:'花椰菜炒豆腐',kcal:280,tags:['低醣','蔬食']} },
+      { day:'週三', lunch:{name:'堅果蔬菜沙拉',kcal:380,tags:['好脂肪','均衡']}, dinner:{name:'蔬菜湯',kcal:200,tags:['湯品','低卡']} },
+      { day:'週四', lunch:{name:'豆腐生菜碗',kcal:280,tags:['蔬食','低醣']}, dinner:{name:'烤杏鮑菇',kcal:240,tags:['菇類','低卡']} },
+      { day:'週五', lunch:{name:'蔬菜蛋捲',kcal:320,tags:['蛋白質','低醣']}, dinner:{name:'酪梨豆腐沙拉',kcal:360,tags:['好脂肪','低醣']} },
+      { day:'週六', lunch:{name:'花椰菜沙拉',kcal:260,tags:['低卡','清爽']}, dinner:{name:'烤時蔬',kcal:220,tags:['烤物','低卡']} },
+      { day:'週日', lunch:{name:'豆腐蔬菜湯',kcal:240,tags:['湯品','清淡']}, dinner:{name:'蔬菜拼盤',kcal:280,tags:['蔬食','均衡']} }
+    ]
+  }
+};
+
+const GROCERY = {
+  japanese: { chicken:{'蛋白質':['雞腿','雞胸','雞蛋'],'蔬菜':['高麗菜','菠菜','白蘿蔔','蔥','薑'],'主食':['白米','烏龍麵'],'調味料':['醬油','味醂','清酒','味噌']}, pork:{'蛋白質':['豬腹肉','豬里肌'],'蔬菜':['高麗菜','白菜','菠菜','蔥'],'主食':['白米','拉麵','烏龍麵'],'調味料':['醬油','味醂','清酒','味噌']}, beef:{'蛋白質':['牛薄片','牛排'],'蔬菜':['洋蔥','白菜','蔥','香菇'],'主食':['白米','烏龍麵'],'調味料':['醬油','味醂','清酒','砂糖']}, seafood:{'蛋白質':['鮭魚','蝦仁','蛤蜊'],'蔬菜':['蔥','薑','海帶'],'主食':['白米','蕎麥麵'],'調味料':['醬油','味醂','清酒','味噌']}, veg:{'蛋白質':['豆腐','雞蛋','納豆'],'蔬菜':['菠菜','香菇','牛蒡','蓮藕'],'主食':['白米','蕎麥麵'],'調味料':['醬油','味醂','味噌']} },
+  taiwanese: { chicken:{'蛋白質':['雞腿','雞胸'],'蔬菜':['高麗菜','青江菜','蔥','薑','九層塔'],'主食':['白米','米粉'],'調味料':['醬油','米酒','麻油','沙茶醬']}, pork:{'蛋白質':['豬腹肉','豬里肌','豬絞肉'],'蔬菜':['高麗菜','空心菜','蔥','薑'],'主食':['白米','米粉','麵條'],'調味料':['醬油','米酒','五香粉','滷包']}, beef:{'蛋白質':['牛腱','牛肋條','牛絞肉'],'蔬菜':['洋蔥','番茄','青椒','蔥'],'主食':['麵條','白米'],'調味料':['醬油','豆瓣醬','米酒','沙茶醬']}, seafood:{'蛋白質':['虱目魚','花枝','蛤蜊','蝦'],'蔬菜':['絲瓜','薑','蔥','九層塔'],'主食':['白米','米粉'],'調味料':['醬油','米酒','魚露','沙茶醬']}, veg:{'蛋白質':['豆腐','豆乾','素肉'],'蔬菜':['地瓜葉','空心菜','高麗菜','香菇'],'主食':['白米','麵條'],'調味料':['醬油','米酒','素蠔油']} },
+  mediterranean: { chicken:{'蛋白質':['雞胸','雞腿'],'蔬菜':['番茄','小黃瓜','彩椒','茄子','蘆筍'],'主食':['古斯米','義大利麵','皮塔餅'],'調味料':['橄欖油','檸檬汁','奧勒岡','迷迭香','大蒜']}, beef:{'蛋白質':['牛肉片','牛絞肉','牛排'],'蔬菜':['番茄','洋蔥','彩椒','茄子'],'主食':['古斯米','皮塔餅'],'調味料':['橄欖油','孜然','迷迭香','大蒜','檸檬汁']}, pork:{'蛋白質':['豬里肌','豬排'],'蔬菜':['番茄','彩椒','洋蔥','茄子'],'主食':['古斯米','皮塔餅'],'調味料':['橄欖油','香料粉','大蒜','檸檬汁']}, seafood:{'蛋白質':['鮭魚','蝦','章魚','蛤蜊'],'蔬菜':['番茄','小黃瓜','彩椒','橄欖'],'主食':['義大利麵','古斯米'],'調味料':['橄欖油','白酒','檸檬汁','大蒜']}, veg:{'蛋白質':['鷹嘴豆','豆腐','雞蛋','費達起司'],'蔬菜':['番茄','小黃瓜','彩椒','茄子','橄欖'],'主食':['古斯米','皮塔餅'],'調味料':['橄欖油','檸檬汁','大蒜','奧勒岡']} },
+  lowcarb: { chicken:{'蛋白質':['雞胸','雞腿'],'蔬菜':['花椰菜','蘆筍','菠菜','酪梨','生菜'],'主食':['花椰菜飯'],'調味料':['橄欖油','檸檬汁','大蒜','香料']}, beef:{'蛋白質':['牛排','牛絞肉'],'蔬菜':['花椰菜','菠菜','酪梨','彩椒'],'主食':['花椰菜飯'],'調味料':['橄欖油','香料','大蒜']}, pork:{'蛋白質':['豬里肌','豬排'],'蔬菜':['花椰菜','蘆筍','生菜','酪梨'],'主食':['花椰菜飯'],'調味料':['橄欖油','香料','醬油']}, seafood:{'蛋白質':['鮭魚','蝦','鮪魚'],'蔬菜':['酪梨','菠菜','生菜','小番茄'],'主食':['花椰菜飯'],'調味料':['橄欖油','檸檬汁','大蒜']}, veg:{'蛋白質':['豆腐','雞蛋','堅果','酪梨'],'蔬菜':['花椰菜','菠菜','蘆筍','杏鮑菇'],'主食':['花椰菜飯'],'調味料':['橄欖油','檸檬汁','香料']} }
+};
+
+function mealContainsAvoid(mealName, avoids) {
+  for (const avoid of avoids) {
+    const keywords = AVOID_KEYWORDS[avoid] || [];
+    for (const kw of keywords) {
+      if (mealName.includes(kw)) return true;
+    }
+  }
+  return false;
+}
+
+function safeReplacement(style, meat, mealType, avoids) {
+  const pool = DATA[style][meat];
+  for (const day of pool) {
+    const meal = day[mealType];
+    if (!mealContainsAvoid(meal.name, avoids)) return meal;
+  }
+  return null;
+}
+
+function generatePlan() {
+  if (!selectedStyle || selectedMeats.length === 0) return;
+  const meat = selectedMeats[0];
+  const servings = parseInt(document.getElementById('servings').value) || 2;
+  let days = JSON.parse(JSON.stringify(DATA[selectedStyle][meat]));
+
+  // Apply avoid filter
+  if (selectedAvoids.length > 0) {
+    days = days.map(day => {
+      const newDay = { day: day.day, lunch: day.lunch, dinner: day.dinner };
+      if (mealContainsAvoid(day.lunch.name, selectedAvoids)) {
+        const replacement = safeReplacement(selectedStyle, meat, 'lunch', selectedAvoids);
+        if (replacement) newDay.lunch = { ...replacement, name: replacement.name + '（調整版）' };
+      }
+      if (mealContainsAvoid(day.dinner.name, selectedAvoids)) {
+        const replacement = safeReplacement(selectedStyle, meat, 'dinner', selectedAvoids);
+        if (replacement) newDay.dinner = { ...replacement, name: replacement.name + '（調整版）' };
+      }
+      return newDay;
+    });
+  }
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('planContent').style.display = 'block';
+  document.getElementById('groceryPanel').style.display = 'flex';
+
+  const meatLabel = selectedMeats.map(m => MEAT_LABELS[m]).join('、');
+  document.getElementById('planTitle').textContent = STYLE_LABELS[selectedStyle] + ' 週計畫';
+  document.getElementById('planMeta').textContent = `${servings} 人份 · ${meatLabel} · 午餐 + 晚餐`;
+
+  const tagsEl = document.getElementById('planTags');
+  tagsEl.innerHTML = selectedAvoids.map(a => `<span class="plan-tag-warn">⚠ ${AVOID_LABELS[a]}</span>`).join('');
+
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+  days.forEach((day, i) => {
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.style.animationDelay = (i * 0.05) + 's';
+    card.innerHTML = `
+      <div class="day-header"><div class="day-name">${day.day}</div></div>
+      <div class="meal-block">
+        <div class="meal-type">午餐</div>
+        <div class="meal-name">${day.lunch.name}</div>
+        <div class="meal-kcal">${day.lunch.kcal} kcal</div>
+        <div class="meal-tags">${day.lunch.tags.map(t=>`<span class="meal-tag">${t}</span>`).join('')}</div>
+      </div>
+      <div class="meal-block">
+        <div class="meal-type">晚餐</div>
+        <div class="meal-name">${day.dinner.name}</div>
+        <div class="meal-kcal">${day.dinner.kcal} kcal</div>
+        <div class="meal-tags">${day.dinner.tags.map(t=>`<span class="meal-tag">${t}</span>`).join('')}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  // Grocery
+  const grocery = GROCERY[selectedStyle][meat];
+  const groceryList = document.getElementById('groceryList');
+  groceryList.innerHTML = '';
+  let total = 0;
+  const qty = servings + '份';
+  for (const [cat, items] of Object.entries(grocery)) {
+    total += items.length;
+    const sec = document.createElement('div');
+    sec.className = 'grocery-category';
+    sec.innerHTML = `<div class="grocery-cat-label">${cat}</div>` +
+      items.map(item => {
+        const filtered = selectedAvoids.some(a => (AVOID_KEYWORDS[a]||[]).some(kw => item.includes(kw)));
+        return `<div class="grocery-item ${filtered?'filtered':''}"><span>${item}${filtered?' ✕':''}</span><span class="grocery-item-qty">${qty}</span></div>`;
+      }).join('');
+    groceryList.appendChild(sec);
+  }
+  document.getElementById('groceryCount').textContent = total + ' 項';
+}
+</script>
+</body>
+</html>
+
     padding: 12px 24px;
     display: flex; align-items: center; gap: 12px;
     height: 52px; flex-shrink: 0;
