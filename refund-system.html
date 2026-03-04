@@ -12,7 +12,452 @@
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
     color: #1A2530;
+  }<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LazyFlow · 流程視覺化工具</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #F5F0E8;
+    font-family: 'DM Sans', sans-serif;
+    color: #1A2530;
   }
+  .header {
+    background: #1A2530;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 52px;
+    flex-shrink: 0;
+  }
+  .logo-sm {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    background: linear-gradient(145deg, #2C3E50, #718096);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .logo-sm .lazy { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 9px; color: #fff; line-height: 1; }
+  .logo-sm .flow { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 9px; color: rgba(255,255,255,0.45); line-height: 1; }
+  .header-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: #fff; }
+  .header-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-left: auto; letter-spacing: 2px; }
+
+  .layout {
+    display: flex;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+
+  .sidebar {
+    width: 260px;
+    background: #fff;
+    border-right: 1px solid #E8E2D8;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #aaa;
+    text-transform: uppercase;
+  }
+  .search-wrap { position: relative; }
+  .search-input {
+    width: 100%;
+    padding: 9px 14px 9px 36px;
+    border: 2px solid #E8E2D8;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: #1A2530;
+    background: #F5F0E8;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: #2C3E50; }
+  .search-icon {
+    position: absolute;
+    left: 11px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #aaa;
+  }
+  .quick-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 5px 10px;
+    background: #F5F0E8;
+    border: 1px solid #E8E2D8;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover, .chip.active { background: #1A2530; border-color: #1A2530; color: #fff; }
+  .trace-list { display: flex; flex-direction: column; gap: 6px; }
+  .trace-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #F5F0E8;
+    font-size: 12px;
+    color: #555;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .trace-item:hover { border-color: #2C3E50; color: #1A2530; }
+  .trace-item.selected { background: #1A2530; color: #fff; border-color: #1A2530; }
+  .trace-item .ti-label { font-weight: 700; font-size: 12px; margin-bottom: 1px; }
+  .trace-item .ti-sub { font-size: 10px; opacity: 0.6; }
+
+  .canvas {
+    flex: 1;
+    padding: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .canvas-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #ccc;
+  }
+  .canvas-empty .big { font-family: 'Syne', sans-serif; font-size: 16px; color: #bbb; }
+  .canvas-empty .small { font-size: 13px; color: #ccc; }
+  .canvas-content { display: none; flex-direction: column; height: 100%; }
+  .canvas-content.visible { display: flex; }
+  .canvas-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: #1A2530;
+    margin-bottom: 3px;
+    flex-shrink: 0;
+  }
+  .canvas-sub {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .flow-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+    justify-content: center;
+  }
+  .flow-node {
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    min-width: 160px;
+    max-width: 220px;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .node-trigger { background: #E85D3A; color: #fff; }
+  .node-check { background: #2C3E50; color: #fff; }
+  .node-action { background: #EDE8DC; color: #1A2530; border: 1.5px solid #D8D0C0; }
+  .node-end-ok { background: #D8EAD8; color: #2A5C2A; border: 1.5px solid #B8D8B8; }
+  .node-end-fail { background: #FDE8E2; color: #8B2A1A; border: 1.5px solid #F0C0B0; }
+
+  .flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+  }
+  .arrow-line { width: 2px; height: 16px; background: #ccc; }
+  .arrow-label {
+    font-size: 10px;
+    color: #888;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #E8E2D8;
+    margin: 1px 0;
+  }
+  .arrow-tip { font-size: 11px; color: #bbb; }
+
+  .flow-branch {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+  }
+  .branch-side { display: flex; flex-direction: column; align-items: center; }
+  .branch-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+  .branch-yes { background: #D8EAD8; color: #2A5C2A; }
+  .branch-no { background: #FDE8E2; color: #8B2A1A; }
+
+  .traceback-panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid #E8E2D8;
+    display: none;
+    flex-shrink: 0;
+    margin-top: 12px;
+  }
+  .traceback-panel.visible { display: block; }
+  .tb-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: #1A2530;
+    margin-bottom: 10px;
+  }
+  .tb-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tb-item {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tb-item:hover { transform: scale(1.05); }
+  .tb-blue { background: #E0EAF5; color: #1A4A7A; }
+  .tb-orange { background: #FDE8E2; color: #8B2A1A; }
+  .tb-green { background: #D8EAD8; color: #2A5C2A; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-sm">
+    <div class="lazy">Lazy</div>
+    <div class="flow">Flow</div>
+  </div>
+  <div class="header-title">流程視覺化工具</div>
+  <div class="header-sub">DEMO · 退款流程</div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-label">搜尋流程</div>
+    <div class="search-wrap">
+      <div class="search-icon">🔍</div>
+      <input class="search-input" id="searchInput" placeholder="輸入關鍵字，如：退款" oninput="handleSearch(this.value)" />
+    </div>
+
+    <div class="sidebar-label">快速選擇</div>
+    <div class="quick-chips">
+      <div class="chip" onclick="selectFlow('refund')">退款申請</div>
+      <div class="chip" onclick="selectFlow('payment')">付款失敗</div>
+      <div class="chip" onclick="selectFlow('cancel')">取消訂單</div>
+      <div class="chip" onclick="selectFlow('complaint')">客訴處理</div>
+    </div>
+
+    <div class="sidebar-label">相關流程</div>
+    <div class="trace-list">
+      <div class="trace-item" onclick="selectFlow('refund')">
+        <div class="ti-label">退款申請</div>
+        <div class="ti-sub">觸發 → 審核 → 退款</div>
+      </div>
+      <div class="trace-item" onclick="selectFlow('payment')">
+        <div class="ti-label">付款失敗</div>
+        <div class="ti-sub">錯誤偵測 → 重試流程</div>
+      </div>
+      <div class="trace-item" onclick="selectFlow('cancel')">
+        <div class="ti-label">取消訂單</div>
+        <div class="ti-sub">取消條件 → 退款觸發</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas">
+    <div class="canvas-empty" id="emptyState">
+      <div style="font-size:40px;">🔍</div>
+      <div class="big">輸入關鍵字開始搜尋</div>
+      <div class="small">例如：退款、付款、取消訂單</div>
+    </div>
+
+    <div class="canvas-content" id="flow-refund">
+      <div class="canvas-title">退款申請流程</div>
+      <div class="canvas-sub">TRACEBACK 來源 · 點擊標籤查看關聯流程</div>
+      <div class="flow-diagram">
+        <div class="flow-node node-trigger" style="animation-delay:0.0s">🛒 客戶申請退款</div>
+        <div class="flow-arrow" style="animation-delay:0.1s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-check" style="animation-delay:0.2s">🔎 系統審核資格</div>
+        <div class="flow-arrow" style="animation-delay:0.3s"><div class="arrow-line"></div><div class="arrow-label">是否符合退款條件？</div><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-branch" style="animation-delay:0.4s">
+          <div class="branch-side">
+            <div class="branch-label branch-yes">✓ 符合</div>
+            <div class="flow-node node-action" style="animation-delay:0.5s">💳 發起退款至原帳戶</div>
+            <div class="flow-arrow" style="animation-delay:0.6s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+            <div class="flow-node node-check" style="animation-delay:0.7s">⏳ 銀行處理中（3-5天）</div>
+            <div class="flow-arrow" style="animation-delay:0.8s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+            <div class="flow-node node-end-ok" style="animation-delay:0.9s">✅ 退款完成通知</div>
+          </div>
+          <div class="branch-side">
+            <div class="branch-label branch-no">✗ 不符合</div>
+            <div class="flow-node node-action" style="animation-delay:0.5s">📋 人工審核介入</div>
+            <div class="flow-arrow" style="animation-delay:0.6s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+            <div class="flow-node node-end-fail" style="animation-delay:0.7s">❌ 退款拒絕通知</div>
+          </div>
+        </div>
+      </div>
+      <div class="traceback-panel visible">
+        <div class="tb-title">🔗 Traceback · 相關聯流程</div>
+        <div class="tb-items">
+          <div class="tb-item tb-blue" onclick="selectFlow('payment')">💳 付款流程</div>
+          <div class="tb-item tb-orange" onclick="selectFlow('cancel')">❌ 取消訂單</div>
+          <div class="tb-item tb-green" onclick="selectFlow('complaint')">📣 客訴處理</div>
+          <div class="tb-item tb-blue">📦 訂單狀態</div>
+          <div class="tb-item tb-blue">📧 通知系統</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-content" id="flow-payment">
+      <div class="canvas-title">付款失敗流程</div>
+      <div class="canvas-sub">TRACEBACK 來源 · 點擊標籤查看關聯流程</div>
+      <div class="flow-diagram">
+        <div class="flow-node node-trigger" style="animation-delay:0.0s">⚠️ 付款失敗偵測</div>
+        <div class="flow-arrow" style="animation-delay:0.1s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-check" style="animation-delay:0.2s">🔁 自動重試（最多3次）</div>
+        <div class="flow-arrow" style="animation-delay:0.3s"><div class="arrow-line"></div><div class="arrow-label">仍失敗？</div><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-action" style="animation-delay:0.4s">📱 通知客戶更換付款方式</div>
+        <div class="flow-arrow" style="animation-delay:0.5s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-end-fail" style="animation-delay:0.6s">🕐 訂單保留 24 小時</div>
+      </div>
+      <div class="traceback-panel visible">
+        <div class="tb-title">🔗 Traceback · 相關聯流程</div>
+        <div class="tb-items">
+          <div class="tb-item tb-orange" onclick="selectFlow('refund')">💰 退款申請</div>
+          <div class="tb-item tb-orange" onclick="selectFlow('cancel')">❌ 取消訂單</div>
+          <div class="tb-item tb-blue">📧 通知系統</div>
+          <div class="tb-item tb-blue">📦 訂單狀態</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-content" id="flow-cancel">
+      <div class="canvas-title">取消訂單流程</div>
+      <div class="canvas-sub">TRACEBACK 來源 · 點擊標籤查看關聯流程</div>
+      <div class="flow-diagram">
+        <div class="flow-node node-trigger" style="animation-delay:0.0s">🚫 客戶申請取消</div>
+        <div class="flow-arrow" style="animation-delay:0.1s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-check" style="animation-delay:0.2s">📦 確認出貨狀態</div>
+        <div class="flow-arrow" style="animation-delay:0.3s"><div class="arrow-line"></div><div class="arrow-label">已出貨？</div><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-branch" style="animation-delay:0.4s">
+          <div class="branch-side">
+            <div class="branch-label branch-yes">✗ 已出貨</div>
+            <div class="flow-node node-action" style="animation-delay:0.5s">📮 等待退貨</div>
+            <div class="flow-arrow" style="animation-delay:0.6s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+            <div class="flow-node node-end-ok" style="animation-delay:0.7s">💰 觸發退款流程</div>
+          </div>
+          <div class="branch-side">
+            <div class="branch-label branch-no">✓ 未出貨</div>
+            <div class="flow-node node-action" style="animation-delay:0.5s">🔒 鎖定訂單</div>
+            <div class="flow-arrow" style="animation-delay:0.6s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+            <div class="flow-node node-end-ok" style="animation-delay:0.7s">✅ 立即取消成功</div>
+          </div>
+        </div>
+      </div>
+      <div class="traceback-panel visible">
+        <div class="tb-title">🔗 Traceback · 相關聯流程</div>
+        <div class="tb-items">
+          <div class="tb-item tb-orange" onclick="selectFlow('refund')">💰 退款申請</div>
+          <div class="tb-item tb-blue">📦 庫存系統</div>
+          <div class="tb-item tb-blue">📧 通知系統</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-content" id="flow-complaint">
+      <div class="canvas-title">客訴處理流程</div>
+      <div class="canvas-sub">TRACEBACK 來源 · 點擊標籤查看關聯流程</div>
+      <div class="flow-diagram">
+        <div class="flow-node node-trigger" style="animation-delay:0.0s">📣 客訴進線</div>
+        <div class="flow-arrow" style="animation-delay:0.1s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-check" style="animation-delay:0.2s">🤖 AI 自動分類</div>
+        <div class="flow-arrow" style="animation-delay:0.3s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-action" style="animation-delay:0.4s">👤 分配客服人員</div>
+        <div class="flow-arrow" style="animation-delay:0.5s"><div class="arrow-line"></div><div class="arrow-tip">▼</div></div>
+        <div class="flow-node node-end-ok" style="animation-delay:0.6s">✅ 24 小時內回覆</div>
+      </div>
+      <div class="traceback-panel visible">
+        <div class="tb-title">🔗 Traceback · 相關聯流程</div>
+        <div class="tb-items">
+          <div class="tb-item tb-orange" onclick="selectFlow('refund')">💰 退款申請</div>
+          <div class="tb-item tb-orange" onclick="selectFlow('cancel')">❌ 取消訂單</div>
+          <div class="tb-item tb-blue">📊 客服報表</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function selectFlow(type) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.querySelectorAll('.canvas-content').forEach(el => el.classList.remove('visible'));
+    document.querySelectorAll('.flow-node, .flow-arrow, .flow-branch').forEach(el => {
+      el.style.opacity = '0';
+      el.style.animation = 'none';
+    });
+    const target = document.getElementById('flow-' + type);
+    if (target) {
+      target.classList.add('visible');
+      setTimeout(() => {
+        target.querySelectorAll('.flow-node, .flow-arrow, .flow-branch').forEach(el => {
+          el.style.animation = '';
+        });
+      }, 50);
+    }
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    const labels = { refund: '退款申請', payment: '付款失敗', cancel: '取消訂單', complaint: '客訴處理' };
+    document.getElementById('searchInput').value = labels[type] || '';
+  }
+
+  function handleSearch(val) {
+    if (!val) return;
+    const map = { '退款': 'refund', '付款': 'payment', '取消': 'cancel', '客訴': 'complaint' };
+    for (const [key, flow] of Object.entries(map)) {
+      if (val.includes(key)) { selectFlow(flow); return; }
+    }
+  }
+</script>
+</body>
+</html>
+
   .header {
     background: #1A2530;
     padding: 16px 32px;
